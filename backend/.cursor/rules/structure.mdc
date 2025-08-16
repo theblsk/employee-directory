@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+This project will use the route -> controller -> service -> repository architecture.
+
+we will use camelCase naming convetion with fullName.whatItIs.ts convention. (eg. employee.controller.ts)
+
+# Routes
+There is a default index.ts route file which will import employee routes and department routes and export them to be used in the index.ts launch file
+
+# Controllers & Services & Repositories
+
+Each file will have CRUD operation functions calling each other, then the controller entry point is called by the route in the appropriate route file.

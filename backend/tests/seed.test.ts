@@ -41,11 +41,11 @@ describe("migrateAndSeedIfEmpty", () => {
     const deptNames = new Set(deptRows.map((d) => d.name));
     for (const name of DEPARTMENTS) expect(deptNames.has(name)).toBe(true);
 
-    // Employees should be seeded with unique IDs
+    // Employees should be seeded with unique UUIDs
     expect(empRows.length).toBeGreaterThan(0);
-    const ids = empRows.map((e) => e.id);
-    const uniqueIds = new Set(ids);
-    expect(uniqueIds.size).toBe(ids.length);
+    const uuids = empRows.map((e) => e.uuid);
+    const uniqueUuids = new Set(uuids);
+    expect(uniqueUuids.size).toBe(uuids.length);
   });
 
   test("does not reseed when data already exists", async () => {
@@ -53,10 +53,10 @@ describe("migrateAndSeedIfEmpty", () => {
     await migrateAndSeedIfEmpty();
     const after = await db.select().from(employees);
 
-    // Compare ID sets before and after
-    const beforeIds = before.map((e) => e.id).sort();
-    const afterIds = after.map((e) => e.id).sort();
-    expect(afterIds).toEqual(beforeIds);
+    // Compare UUID sets before and after
+    const beforeUuids = before.map((e) => e.uuid).sort();
+    const afterUuids = after.map((e) => e.uuid).sort();
+    expect(afterUuids).toEqual(beforeUuids);
   });
 });
 

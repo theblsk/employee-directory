@@ -13,12 +13,13 @@ export async function migrateAndSeedIfEmpty() {
   );
   sqlite.exec(
     `CREATE TABLE IF NOT EXISTS employees (
-      id text primary key,
+      id integer primary key autoincrement,
+      uuid text not null unique,
       name text not null,
       title text not null,
       email text not null,
       location text not null,
-      avatar text not null,
+      avatar text,
       department_id integer not null references departments(id)
     );`
   );
@@ -44,7 +45,7 @@ export async function migrateAndSeedIfEmpty() {
 
   await db.insert(employees).values(
     employeesData.map((e, i) => ({
-      id: String(e.id),
+      uuid: String(e.uuid),
       name: String(e.name),
       title: String(e.title),
       email: String(e.email),

@@ -6,12 +6,13 @@ export const departments = sqliteTable("departments", {
 });
 
 export const employees = sqliteTable("employees", {
-  id: text("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  uuid: text("uuid").notNull().unique(),
   name: text("name").notNull(),
   title: text("title").notNull(),
   email: text("email").notNull(),
   location: text("location").notNull(),
-  avatar: text("avatar").notNull(),
+  avatar: text("avatar"),
   departmentId: integer("department_id")
     .notNull()
     .references(() => departments.id),

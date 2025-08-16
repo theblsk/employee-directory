@@ -18,10 +18,10 @@ function enrichUser(u: Record<string, any>, index: number) {
   const title = TITLES[index % TITLES.length];
   const department = DEPARTMENTS[index % DEPARTMENTS.length];
   const avatar = u.picture.large;
-  const id = u.login.uuid;
+  const uuid = u.login.uuid;
 
   return {
-    id,
+    uuid,
     name,
     title,
     department,

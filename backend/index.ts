@@ -1,4 +1,8 @@
 import express from "express";
+import { migrateAndSeedIfEmpty } from "./src/db/init";
+import { db } from "./src/db/client";
+import { employees, departments } from "./src/db/schema";
+import { eq } from "drizzle-orm";
 
 const app = express();
 const port = Number(process.env.PORT) || 4000;
@@ -9,10 +13,23 @@ app.get("/health", (_req, res) => {
 	res.status(200).json({ status: "ok" });
 });
 
-app.get("/", (_req, res) => {
-	res.send("Employee Directory Backend is running");
+app.get("/", async (_req, res) => {
+    const rows = await db
+        .select({
+            id: employees.id,
+            name: employees.name,
+            title: employees.title,
+            email: employees.email,
+            location: employees.location,
+            avatar: employees.avatar,
+            department: departments.name,
+        })
+        .from(employees)
+        .leftJoin(departments, eq(departments.id, employees.departmentId));
+	res.json(rows);
 });
 
-app.listen(port, () => {
+app.listen(port, async () => {
+    await migrateAndSeedIfEmpty();
 	console.log(`Server listening on http://localhost:${port}`);
 });

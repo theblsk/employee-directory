@@ -3,4 +3,4 @@ alwaysApply: true
 ---
 This project is a monorepo. Frontend tasks fall into the React Vite project in the frontend folder. Backend tasks fall into the expressjs initiated with Bun project in the backend folder.
 
-The project is an employee directory display project using fake data.
+The project is an employee directory display project using backend data.

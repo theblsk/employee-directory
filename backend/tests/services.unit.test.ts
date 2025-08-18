@@ -9,12 +9,14 @@ describe("services (unit)", () => {
     mock.restore();
   });
 
-  test("employees.service.list returns pagination envelope using repo", async () => {
+  test("employees.service.list computes pagination metadata and returns repo items", async () => {
     const items = [
-      { id: 1, uuid: "u1", name: "n", title: "t", email: "e", location: "l", avatar: null, departmentId: 1 },
-      { id: 2, uuid: "u2", name: "n", title: "t", email: "e", location: "l", avatar: null, departmentId: 1 },
+      { id: 1, uuid: "u1", name: "n", title: "t", email: "e", location: "l", avatar: null, departmentId: 1, department: null },
+      { id: 2, uuid: "u2", name: "n", title: "t", email: "e", location: "l", avatar: null, departmentId: 1, department: null },
     ];
     await mock.module("../src/repositories/employees.repository", () => ({
+      // include both new and legacy functions to avoid leaking missing exports via module cache
+      searchEmployees: async () => ({ items, total: 20 }),
       listEmployees: async () => items,
       countEmployees: async () => 20,
       getEmployeeById: async () => null,
@@ -32,7 +34,7 @@ describe("services (unit)", () => {
     expect(result.items).toEqual(items);
   });
 
-  test("departments.service.list returns pagination envelope using repo", async () => {
+  test("departments.service.list computes pagination metadata and returns repo items", async () => {
     const items = [{ id: 1, name: "a" }];
     await mock.module("../src/repositories/departments.repository", () => ({
       listDepartments: async () => items,

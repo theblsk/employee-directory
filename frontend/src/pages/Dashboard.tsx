@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { TITLES, DEPARTMENTS } from '../../../backend/src/constants';
 
 type Employee = {
   id: string;
@@ -20,35 +21,96 @@ type EmployeesApiResponse = {
   pages: number;
 };
 
-const fetchEmployees = async (page: number, limit: number): Promise<EmployeesApiResponse> => {
-  const query = `?page=${page}&limit=${limit}`;
+const fetchEmployees = async (params: URLSearchParams): Promise<EmployeesApiResponse> => {
+  const query = `?${params.toString()}`;
   let res = await fetch(`/api/employees${query}`);
   if (!res.ok) {
     res = await fetch(`http://localhost:4000/api/employees${query}`);
   }
   const data = await res.json();
-  // Ensure shape matches expected structure
   return {
     items: Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [],
     total: Number(data?.total ?? 0),
-    page: Number(data?.page ?? page),
-    limit: Number(data?.limit ?? limit),
+    page: Number(data?.page ?? Number(params.get('page') ?? 1)),
+    limit: Number(data?.limit ?? Number(params.get('limit') ?? 12)),
     pages: Number(data?.pages ?? 1),
   };
 };
 
+type EmployeeSearchFilter = { searchTerm: string; title: string; department: string };
+
 const Dashboard: React.FC = () => {
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(12);
+  const [filter, setFilter] = useState<EmployeeSearchFilter>({ searchTerm: "", title: "", department: "" });
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter.searchTerm, filter.title, filter.department]);
+
+  const buildParams = () => {
+    const queryParams = new URLSearchParams();
+    queryParams.set('page', String(page));
+    queryParams.set('limit', String(limit));
+    if (filter.searchTerm.trim()) queryParams.set('searchTerm', filter.searchTerm.trim());
+    if (filter.title) queryParams.set('title', filter.title);
+    if (filter.department) queryParams.set('department', filter.department);
+    return queryParams;
+  };
+
+  const paramsString = buildParams().toString();
   const { data, isLoading, isError } = useQuery<EmployeesApiResponse>({
-    queryKey: ['employees', page, limit],
-    queryFn: () => fetchEmployees(page, limit),
-    placeholderData: (prev) => prev,
+    queryKey: ['employees', paramsString],
+    queryFn: () => fetchEmployees(new URLSearchParams(paramsString)),
   });
+  
   return (
     <section className="py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Team Directory</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Team Directory</h1>
+        <div className="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <input
+              type="text"
+              value={filter.searchTerm}
+              onChange={(e) => {
+                const value = e.target.value;
+                setTimeout(() => {
+                  setFilter((prev) => ({ ...prev, searchTerm: value }));
+                }, 100);
+              }}
+              placeholder="Search name, email, title, location..."
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <select
+              className="rounded-md border border-gray-300 px-3 py-2"
+              value={filter.title}
+              onChange={(e) => setFilter((prev) => ({ ...prev, title: e.target.value }))}
+            >
+              <option value="">All</option>
+              {TITLES.map((t: string) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <select
+              className="rounded-md border border-gray-300 px-3 py-2"
+              value={filter.department}
+              onChange={(e) => setFilter((prev) => ({ ...prev, department: e.target.value }))}
+            >
+              <option value="">All</option>
+              {DEPARTMENTS.map((d: string) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         {isLoading ? <div className="text-gray-500">Loading...</div> : null}
         {isError ? <div className="text-red-500">Failed to load employees.</div> : null}
         {!isLoading && !isError && data ? (

@@ -28,6 +28,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
+    // Preferrably we would have used Zod or similar here to validate the create body and then autoinsert
     const created = await service.create({
       uuid: String(req.body.uuid),
       name: String(req.body.name),

@@ -37,7 +37,6 @@ app.get("/", async (_req, res) => {
   res.send("Hello World");
 });
 
-// Global error handler should be the last middleware
 app.use(errorHandler);
 
 app.listen(port, async () => {

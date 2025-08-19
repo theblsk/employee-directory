@@ -1,38 +1,38 @@
 import { DEPARTMENTS, TITLES } from "../constants";
 
-async function fetchRandomUsers(count = 50) {
-  const res = await fetch(
-    `https://randomuser.me/api/?results=${count}&nat=us,ca,gb,au`
+async function fetchRandomUsers(numberOfUsers = 50) {
+  const response = await fetch(
+    `https://randomuser.me/api/?results=${numberOfUsers}&nat=us,ca,gb,au` // Fine to be hardcoded
   );
-  if (!res.ok) throw new Error("Failed to fetch random users");
-  const data = (await res.json()) as { results: Record<string, any>[] };
-  return data.results;
+  if (!response.ok) throw new Error("Failed to fetch random users");
+  const responseData = (await response.json()) as { results: Record<string, any>[] };
+  return responseData.results;
 }
 
-function enrichUser(u: Record<string, any>, index: number) {
-  const name = `${u.name.first} ${u.name.last}`;
-  const city = u.location.city;
-  const state = u.location.state;
-  const country = u.location.country;
-  const location = `${city}, ${state}, ${country}`;
-  const title = TITLES[index % TITLES.length];
-  const department = DEPARTMENTS[index % DEPARTMENTS.length];
-  const avatar = u.picture.large;
-  const uuid = u.login.uuid;
+function enrichUser(randomUser: Record<string, any>, userIndex: number) {
+  const fullName = `${randomUser.name.first} ${randomUser.name.last}`;
+  const city = randomUser.location.city;
+  const state = randomUser.location.state;
+  const country = randomUser.location.country;
+  const locationString = `${city}, ${state}, ${country}`;
+  const jobTitle = TITLES[userIndex % TITLES.length];
+  const departmentName = DEPARTMENTS[userIndex % DEPARTMENTS.length];
+  const avatarUrl = randomUser.picture.large;
+  const userUuid = randomUser.login.uuid;
 
   return {
-    uuid,
-    name,
-    title,
-    department,
-    location,
-    avatar,
-    email: u.email,
+    uuid: userUuid,
+    name: fullName,
+    title: jobTitle,
+    department: departmentName,
+    location: locationString,
+    avatar: avatarUrl,
+    email: randomUser.email,
   };
 }
 
-export async function seedEmployeesFromRandomUser(count = 50) {
-  const users = await fetchRandomUsers(count);
-  const enriched = users.map((u, i) => enrichUser(u, i));
-  return enriched;
+export async function seedEmployeesFromRandomUser(numberOfEmployees = 50) {
+  const randomUsers = await fetchRandomUsers(numberOfEmployees);
+  const enrichedEmployees = randomUsers.map((randomUser, userIndex) => enrichUser(randomUser, userIndex));
+  return enrichedEmployees;
 }

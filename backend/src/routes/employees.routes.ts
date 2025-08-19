@@ -1,15 +1,15 @@
 import { Router } from "express";
-import * as ctrl from "../controllers/employees.controller";
+import * as employeeController from "../controllers/employees.controller";
 
 const router = Router();
 
-router.get("/", ctrl.list);
-router.get("/by-department/:department", ctrl.listByDepartment);
-router.get("/by-title/:title", ctrl.listByTitle);
-router.get("/:id", ctrl.getById);
-router.post("/", ctrl.create);
-router.put("/:id", ctrl.update);
-router.delete("/:id", ctrl.remove);
+router.get("/", employeeController.list);
+router.get("/by-department/:department", employeeController.listByDepartment);
+router.get("/by-title/:title", employeeController.listByTitle);
+router.get("/:id", employeeController.getById);
+router.post("/", employeeController.create);
+router.put("/:id", employeeController.update);
+router.delete("/:id", employeeController.remove);
 
 export default router;
 

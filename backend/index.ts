@@ -5,6 +5,7 @@ import { db } from "./src/db/client";
 import { employees, departments } from "./src/db/schema";
 import { eq } from "drizzle-orm";
 import apiRouter from "./src/routes";
+import { errorHandler } from "./src/middleware/errorHandler";
 
 const app = express();
 const port = Number(process.env.PORT) || 4000;
@@ -51,6 +52,9 @@ app.get("/", async (_req, res) => {
         .leftJoin(departments, eq(departments.id, employees.departmentId));
 	res.json(rows);
 });
+
+// Global error handler should be the last middleware
+app.use(errorHandler);
 
 app.listen(port, async () => {
     await migrateAndSeedIfEmpty();

@@ -13,8 +13,7 @@ import { useFetchDepartments } from '../api/departments';
 type EmployeeSearchFilter = { searchTerm: string; title: string; department: string };
 
 const Dashboard: React.FC = () => {
-  const [page, setPage] = useState<number>(1);
-  const [limit] = useState<number>(12);
+  const [pagination, setPagination] = useState<{ page: number; limit: number }>({ page: 1, limit: 12 });
   const [filter, setFilter] = useState<EmployeeSearchFilter>({ searchTerm: "", title: "", department: "" });
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -30,13 +29,14 @@ const Dashboard: React.FC = () => {
   const debouncedSearchTerm = useDebounce<string>(filter.searchTerm, 250);
 
   useEffect(() => {
-    setPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   }, [debouncedSearchTerm, filter.title, filter.department]);
 
+  // Could be extracted to a util/hook, but for demo purposes, it's here
   const buildParams = () => {
     const queryParams = new URLSearchParams();
-    queryParams.set('page', String(page));
-    queryParams.set('limit', String(limit));
+    queryParams.set('page', String(pagination.page));
+    queryParams.set('limit', String(pagination.limit));
     if (debouncedSearchTerm.trim()) queryParams.set('searchTerm', debouncedSearchTerm.trim());
     if (filter.title) queryParams.set('title', filter.title);
     if (filter.department) queryParams.set('department', filter.department);
@@ -97,6 +97,7 @@ const Dashboard: React.FC = () => {
             <input
               type="text"
               value={filter.searchTerm}
+              // Could be made into a handleChange function, but for demo purposes, it's like this
               onChange={(e) => setFilter((prev) => ({ ...prev, searchTerm: e.target.value }))}
               placeholder="Search name, email, title, location..."
               className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -297,16 +298,16 @@ const Dashboard: React.FC = () => {
             <div className="space-x-2">
               <button
                 className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={pagination.page <= 1}
+                onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
               >
                 Previous
               </button>
               <span className="text-sm text-gray-700">Page {data?.page} / {data?.pages}</span>
               <button
                 className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
-                disabled={page >= (data?.pages || 1)}
-                onClick={() => setPage((p) => Math.min((data?.pages || p + 1), p + 1))}
+                disabled={pagination.page >= (data?.pages || 1)}
+                onClick={() => setPagination((prev) => ({ ...prev, page: Math.min((data?.pages || prev.page + 1), prev.page + 1) }))}
               >
                 Next
               </button>

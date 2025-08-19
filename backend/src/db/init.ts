@@ -1,7 +1,7 @@
 import { db, sqlite } from "./client";
 import { departments, employees } from "./schema";
-import { DEPARTMENTS } from "../constants";
-import { seedEmployeesFromRandomUser } from "../lib/seedData";
+import departmentsSeed from "../data/departments.seed.json" assert { type: "json" };
+import employeesSeed from "../data/employees.seed.json" assert { type: "json" };
 
 /**
  * Seeds the local SQLite database with demo data for the employee directory.
@@ -33,14 +33,24 @@ export async function migrateAndSeedIfEmpty() {
 
     const existingDepartments = await db.select().from(departments).limit(1);
     if (existingDepartments.length === 0) {
-      await db.insert(departments).values(DEPARTMENTS.map((name) => ({ name })));
+      await db.insert(departments).values(
+        (departmentsSeed as Array<{ id: number; name: string }>).map(({ id, name }) => ({ id, name }))
+      );
     }
 
     const existingEmployees = await db.select().from(employees).limit(1);
     if (existingEmployees.length > 0) return;
 
     const departmentRows = await db.select().from(departments);
-    const employeesData = await seedEmployeesFromRandomUser(50);
+    const employeesData = employeesSeed as Array<{
+      uuid: string;
+      name: string;
+      title: string;
+      email: string;
+      location: string;
+      avatar: string | null;
+      departmentId: number;
+    }>;
 
     const departmentIds: number[] = departmentRows.map((department) => department.id);
     if (departmentIds.length === 0) {
@@ -50,14 +60,14 @@ export async function migrateAndSeedIfEmpty() {
     const getDepartmentIdByIndex = (index: number): number => departmentIds[index % departmentIds.length] as number;
 
     await db.insert(employees).values(
-      employeesData.map((employee, index) => ({
+      employeesData.map((employee) => ({
         uuid: String(employee.uuid),
         name: String(employee.name),
         title: String(employee.title),
         email: String(employee.email),
         location: String(employee.location),
-        avatar: String(employee.avatar),
-        departmentId: getDepartmentIdByIndex(index),
+        avatar: employee.avatar === null ? null : String(employee.avatar),
+        departmentId: Number(employee.departmentId),
       }))
     );
   } catch (error) {

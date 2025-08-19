@@ -1,8 +1,6 @@
 import express from "express";
 import cors from "cors";
 import { migrateAndSeedIfEmpty } from "./src/db/init";
-import { existsSync } from "node:fs";
-import { databaseFile } from "./src/db/client";
 import apiRouter from "./src/routes";
 import { errorHandler } from "./src/middleware/errorHandler";
 
@@ -43,9 +41,7 @@ app.use(errorHandler);
 
 app.listen(port, async () => {
   try {
-    if (!existsSync(databaseFile)) {
-      await migrateAndSeedIfEmpty();
-    }
+    await migrateAndSeedIfEmpty();
   } catch (error) {
     const err = error as unknown as Record<string, unknown>;
     const detailed = {
@@ -55,7 +51,10 @@ app.listen(port, async () => {
       cause: (err as any)?.cause,
       errorString: String(error),
     };
-    console.error("Startup migrateAndSeedIfEmpty failed with detailed error:", detailed);
+    console.error(
+      "Startup migrateAndSeedIfEmpty failed with detailed error:",
+      detailed
+    );
   }
   console.log(`Server listening on http://localhost:${port}`);
 });

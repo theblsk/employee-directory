@@ -40,6 +40,18 @@ app.get("/", async (_req, res) => {
 app.use(errorHandler);
 
 app.listen(port, async () => {
-  await migrateAndSeedIfEmpty();
+  try {
+    await migrateAndSeedIfEmpty();
+  } catch (error) {
+    const err = error as unknown as Record<string, unknown>;
+    const detailed = {
+      name: (err as any)?.name,
+      message: (err as any)?.message,
+      stack: (err as any)?.stack,
+      cause: (err as any)?.cause,
+      errorString: String(error),
+    };
+    console.error("Startup migrateAndSeedIfEmpty failed with detailed error:", detailed);
+  }
   console.log(`Server listening on http://localhost:${port}`);
 });

@@ -5,7 +5,15 @@ async function run(): Promise<void> {
     await migrateAndSeedIfEmpty();
     console.log("Migration and seed completed.");
   } catch (error) {
-    console.error("Migration/seed failed:", error);
+    const err = error as unknown as Record<string, unknown>;
+    const detailed = {
+      name: (err as any)?.name,
+      message: (err as any)?.message,
+      stack: (err as any)?.stack,
+      cause: (err as any)?.cause,
+      errorString: String(error),
+    };
+    console.error("Migration/seed failed with detailed error:", detailed);
     process.exit(1);
   }
 }

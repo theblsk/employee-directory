@@ -7,11 +7,12 @@ COPY package.json ./
 COPY bun.lock ./
 RUN bun install --frozen-lockfile
 
+
 # Copy application source
 COPY . .
 
 # Prestep: generate the SQLite database inside the image during build
-RUN bun run src/scripts/migrateAndSeed.ts
+RUN bun run db:seed
 
 # Expose default port
 EXPOSE 4000

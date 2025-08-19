@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import { migrateAndSeedIfEmpty } from "./src/db/init";
+import { existsSync } from "node:fs";
+import { databaseFile } from "./src/db/client";
 import apiRouter from "./src/routes";
 import { errorHandler } from "./src/middleware/errorHandler";
 
@@ -41,7 +43,9 @@ app.use(errorHandler);
 
 app.listen(port, async () => {
   try {
-    await migrateAndSeedIfEmpty();
+    if (!existsSync(databaseFile)) {
+      await migrateAndSeedIfEmpty();
+    }
   } catch (error) {
     const err = error as unknown as Record<string, unknown>;
     const detailed = {

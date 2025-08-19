@@ -1,69 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { TITLES, DEPARTMENTS } from '../../../backend/src/constants';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useDebounce } from '../hooks/useDebounce';
-import { useCreateEmployee, useUpdateEmployee, useDeleteEmployee } from '../api/employees';
-import { API_BASE_URL } from '../constants';
+import { useCreateEmployee, useUpdateEmployee, useDeleteEmployee, useFetchEmployees } from '../api/employees';
+import type { Employee } from '../api/employees';
+import { useFetchDepartments } from '../api/departments';
 
-type Employee = {
-  id: number;
-  name: string;
-  title: string;
-  department: string;
-  location: string;
-  avatar: string;
-  email: string;
-  departmentId?: number;
-};
 
-type EmployeesApiResponse = {
-  items: Employee[];
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-};
-
-const fetchEmployees = async (params: URLSearchParams): Promise<EmployeesApiResponse> => {
-  const query = `?${params.toString()}`;
-  const res = await fetch(`${API_BASE_URL}/api/employees${query}`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch employees: ${res.status} ${res.statusText}`);
-  }
-  const data = await res.json();
-  return {
-    items: Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [],
-    total: Number(data?.total ?? 0),
-    page: Number(data?.page ?? Number(params.get('page') ?? 1)),
-    limit: Number(data?.limit ?? Number(params.get('limit') ?? 12)),
-    pages: Number(data?.pages ?? 1),
-  };
-};
-
-type Department = { id: number; name: string };
-
-type DepartmentsApiResponse = {
-  items: Department[];
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-};
-
-const fetchDepartments = async (): Promise<Department[]> => {
-  const res = await fetch(`${API_BASE_URL}/api/departments?page=1&limit=100`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch departments: ${res.status} ${res.statusText}`);
-  }
-  const data: DepartmentsApiResponse | Department[] = await res.json();
-  if (Array.isArray(data)) return data;
-  return Array.isArray((data as DepartmentsApiResponse).items)
-    ? (data as DepartmentsApiResponse).items
-    : [];
-};
 
 type EmployeeSearchFilter = { searchTerm: string; title: string; department: string };
 
@@ -99,16 +44,8 @@ const Dashboard: React.FC = () => {
   };
 
   const paramsString = buildParams().toString();
-  const { data, isLoading, isError } = useQuery<EmployeesApiResponse>({
-    queryKey: ['employees', paramsString],
-    queryFn: () => fetchEmployees(new URLSearchParams(paramsString)),
-  });
-  const { data: departments } = useQuery<Department[]>({
-    queryKey: ['departments'],
-    queryFn: fetchDepartments,
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
+  const { data, isLoading, isError } = useFetchEmployees(paramsString);
+  const { data: departments } = useFetchDepartments({ staleTime: 10 * 60 * 1000, gcTime: 30 * 60 * 1000 });
 
 
 

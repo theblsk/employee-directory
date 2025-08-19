@@ -3,6 +3,9 @@
 This backend uses Bun + Express to serve an employee directory powered by RandomUser data.
 
 - Changelog (recent)
+- Added global error-handling middleware in `src/middleware/errorHandler.ts` and wired it in `index.ts` after routes.
+- Introduced `src/lib/logger.ts` using Winston for logging (pretty colorized in development, JSON in production, `warn` level during tests).
+- Updated controllers to use try/catch and forward errors to the global handler with `next(error)`.
 - Added Express server in `index.ts` with JSON middleware and a health check at `/health`.
 - Implemented datastore with Drizzle ORM + SQLite (Bun) and moved data retrieval to the database.
 - Implemented `GET /` to return employees from SQLite (joined with departments) instead of calling RandomUser per request.
@@ -18,11 +21,13 @@ backend/
   index.ts                 # Express app entry
   src/
     constants/index.ts     # TITLES, DEPARTMENTS
+    lib/logger.ts          # Winston logger (Console transport)
     lib/seedData.ts        # fetch + enrich employee data
     db/
       client.ts            # Bun SQLite + Drizzle client
       schema.ts            # Drizzle tables: departments, employees
       init.ts              # DDL + seed-once at server startup
+    middleware/errorHandler.ts # Global Express error handler
 ```
 
 ### Install
@@ -50,6 +55,10 @@ Environment:
 
 ### API endpoints under /api
 - `GET /api/employees`: list employees (pagination via `page` and `limit` query params)
+  - Optional query filters:
+    - `searchTerm`: free-text search against employee name and possibly other fields
+    - `title`: filter by job title
+    - `department`: filter by department name
 - `GET /api/employees/:id`: get a single employee by id
 - `POST /api/employees`: create a new employee
 - `PUT /api/employees/:id`: update an existing employee
@@ -59,6 +68,10 @@ Environment:
 - `POST /api/departments`: create a new department
 - `PUT /api/departments/:id`: update an existing department
 - `DELETE /api/departments/:id`: delete a department
+
+Additional convenience endpoints:
+- `GET /api/employees/by-department/:department`: list employees by department (supports `page`, `limit`)
+- `GET /api/employees/by-title/:title`: list employees by title (supports `page`, `limit`)
 
 Note: Health is available at `/health` (root), not under `/api`.
 
@@ -76,4 +89,20 @@ curl -s http://localhost:4000/ | head -n 20
 ### Notes
 - Runtime: Bun v1.2.x. Express v5.
 - Local SQLite persistence is file-based; cloud/server deployments should use a persistent volume if data must survive restarts.
+
+### Error handling
+- All controllers forward unexpected errors via `next(error)` to a global error handler (`src/middleware/errorHandler.ts`).
+- The handler logs the error and returns a minimal JSON body: `{ message }` with an appropriate status code.
+
+### Logging
+- Implemented with Winston in `src/lib/logger.ts`.
+- Output:
+  - Development: colorized console lines with timestamp, level, message, and meta/stack when present.
+  - Production: JSON logs suitable for aggregation.
+  - Test: log level elevated to `warn` to reduce noise.
+```ts
+import { logger } from "./src/lib/logger";
+logger.info("Server starting");
+logger.error("Failed to fetch employees", { status: 500, requestId: "abc123" });
+```
 

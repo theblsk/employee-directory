@@ -12,7 +12,6 @@ const port = Number(process.env.PORT) || 4000;
 
 app.use(express.json());
 
-// Configure CORS using comma-separated env var ALLOWED_ORIGINS
 const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((origin) => origin.trim())

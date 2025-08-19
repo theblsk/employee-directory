@@ -1,13 +1,13 @@
 import { Router } from "express";
-import * as ctrl from "../controllers/departments.controller";
+import * as departmentController from "../controllers/departments.controller";
 
 const router = Router();
 
-router.get("/", ctrl.list);
-router.get("/:id", ctrl.getById);
-router.post("/", ctrl.create);
-router.put("/:id", ctrl.update);
-router.delete("/:id", ctrl.remove);
+router.get("/", departmentController.list);
+router.get("/:id", departmentController.getById);
+router.post("/", departmentController.create);
+router.put("/:id", departmentController.update);
+router.delete("/:id", departmentController.remove);
 
 export default router;
 

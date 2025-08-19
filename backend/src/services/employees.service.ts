@@ -18,7 +18,13 @@ export async function list(
     offset,
     safeLimit
   );
-  return { items, total, page: safePage, limit: safeLimit, pages: Math.ceil(total / safeLimit) };
+  return {
+    items,
+    total,
+    page: safePage,
+    limit: safeLimit,
+    pages: Math.ceil(total / safeLimit),
+  };
 }
 
 export async function getById(id: number) {
@@ -45,12 +51,20 @@ export async function listByDepartment(
   const safeLimit = Math.max(1, Math.min(100, limit || 10));
   const safePage = Math.max(1, page || 1);
   const offset = (safePage - 1) * safeLimit;
-  const { items, total } = await repo.listByDepartment(departmentName, offset, safeLimit);
-  return { items, total, page: safePage, limit: safeLimit, pages: Math.ceil(total / safeLimit) };
+  const { items, total } = await repo.listByDepartment(
+    departmentName,
+    offset,
+    safeLimit
+  );
+  return {
+    items,
+    total,
+    page: safePage,
+    limit: safeLimit,
+    pages: Math.ceil(total / safeLimit),
+  };
 }
 
 export async function listByTitle(title: string, page: number, limit: number) {
   return list(page, limit, { title });
 }
-
-

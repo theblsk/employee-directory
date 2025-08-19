@@ -25,7 +25,11 @@ export async function countEmployees() {
 }
 
 export async function getEmployeeById(id: number) {
-  const rows = await db.select().from(employees).where(eq(employees.id, id)).limit(1);
+  const rows = await db
+    .select()
+    .from(employees)
+    .where(eq(employees.id, id))
+    .limit(1);
   return rows[0] ?? null;
 }
 
@@ -44,11 +48,16 @@ export async function updateEmployee(id: number, payload: Partial<Employee>) {
 }
 
 export async function deleteEmployee(id: number) {
-  const result = await db.delete(employees).where(eq(employees.id, id)).returning();
+  const result = await db
+    .delete(employees)
+    .where(eq(employees.id, id))
+    .returning();
   return result[0] ?? null;
 }
 
-export type EmployeeWithDepartmentListItem = Employee & { department?: string | null };
+export type EmployeeWithDepartmentListItem = Employee & {
+  department?: string | null;
+};
 
 export async function searchEmployees(
   filters: EmployeeSearchFilters,
@@ -71,10 +80,7 @@ export async function searchEmployees(
     .from(employees)
     .leftJoin(departments, eq(departments.id, employees.departmentId));
 
-  const items = await base
-    .where(whereExpr)
-    .offset(offset)
-    .limit(limit);
+  const items = await base.where(whereExpr).offset(offset).limit(limit);
 
   const countBase = db
     .select({ value: count() })
@@ -94,8 +100,10 @@ export async function listByDepartment(
   return searchEmployees({ department: departmentName }, offset, limit);
 }
 
-export async function listByTitle(title: string, offset: number, limit: number) {
+export async function listByTitle(
+  title: string,
+  offset: number,
+  limit: number
+) {
   return searchEmployees({ title }, offset, limit);
 }
-
-

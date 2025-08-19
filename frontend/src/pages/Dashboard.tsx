@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TITLES, DEPARTMENTS } from '../../../backend/src/constants';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
@@ -17,6 +17,7 @@ const Dashboard: React.FC = () => {
   const [filter, setFilter] = useState<EmployeeSearchFilter>({ searchTerm: "", title: "", department: "" });
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [paginationDirection, setPaginationDirection] = useState<'next' | 'previous' | null>(null);
   const [form, setForm] = useState<{ uuid?: string; name: string; title: string; email: string; location: string; departmentId: number | "" }>({
     uuid: undefined,
     name: "",
@@ -31,6 +32,16 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   }, [debouncedSearchTerm, filter.title, filter.department]);
+
+  // Reset pagination direction after animation completes
+  useEffect(() => {
+    if (paginationDirection) {
+      const timer = setTimeout(() => {
+        setPaginationDirection(null);
+      }, 500); // Match animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [paginationDirection]);
 
   // Could be extracted to a util/hook, but for demo purposes, it's here
   const buildParams = () => {
@@ -133,45 +144,83 @@ const Dashboard: React.FC = () => {
         {isLoading ? <div className="text-gray-500">Loading...</div> : null}
         {isError ? <div className="text-red-500">Failed to load employees.</div> : null}
         {!isLoading && !isError && data ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {(data?.items ?? []).map((employee: Employee) => (
-              <motion.div key={employee.id} whileHover={{ scale: 1.03 }} className="bg-white rounded-xl shadow-md p-4 flex items-center space-x-4">
-                <img src={employee.avatar} alt={employee.name} className="w-12 h-12 rounded-full object-cover" />
-                <div className="flex-1">
-                  <div className="text-lg font-medium text-gray-900">{employee.name}</div>
-                  <div className="text-sm text-gray-500">{employee.title} • {employee.department}</div>
-                  <div className="text-xs text-gray-400">{employee.location} • {employee.email}</div>
-                </div>
-                <div className="flex flex-col items-center gap-2 justify-center">
-                  <button
-                    className="w-9 h-9 inline-flex items-center justify-center rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200"
-                    onClick={() => openEdit(employee)}
-                    aria-label={`Edit ${employee.name}`}
-                    title="Edit"
-                  >
-                    <FontAwesomeIcon icon={faPen} />
-                  </button>
-                  <button
-                    className="w-9 h-9 inline-flex items-center justify-center rounded-md bg-red-100 text-red-700 hover:bg-red-200"
-                    onClick={() => {
-                      if (confirm(`Delete ${employee.name}? This cannot be undone.`)) {
-                        deleteMutation.mutate(employee.id);
-                      }
-                    }}
-                    aria-label={`Delete ${employee.name}`}
-                    title="Delete"
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`page-${data?.page}`}
+              initial={{ 
+                opacity: 0, 
+                x: paginationDirection === 'next' ? 100 : paginationDirection === 'previous' ? -100 : 0,
+                y: paginationDirection ? 0 : 10
+              }}
+              animate={{ 
+                opacity: 1, 
+                x: 0,
+                y: 0
+              }}
+              exit={{ 
+                opacity: 0, 
+                x: paginationDirection === 'next' ? -100 : paginationDirection === 'previous' ? 100 : 0
+              }}
+              transition={{ 
+                duration: 0.4, 
+                ease: "easeInOut",
+                opacity: { duration: 0.3 }
+              }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {(data?.items ?? []).map((employee: Employee, index: number) => (
+                <motion.div 
+                  key={employee.id} 
+                  initial={{ 
+                    opacity: 0, 
+                    x: paginationDirection === 'next' ? 50 : paginationDirection === 'previous' ? -50 : 0,
+                    y: paginationDirection ? 0 : 20
+                  }}
+                  animate={{ 
+                    opacity: 1, 
+                    x: 0,
+                    y: 0
+                  }}
+                  transition={{ 
+                    duration: 0.4, 
+                    delay: index * 0.05,
+                    ease: "easeInOut"
+                  }}
+                  whileHover={{ scale: 1.03 }} 
+                  className="bg-white rounded-xl shadow-md p-4 flex items-center space-x-4"
+                >
+                  <img src={employee.avatar} alt={employee.name} className="w-12 h-12 rounded-full object-cover" />
+                  <div className="flex-1">
+                    <div className="text-lg font-medium text-gray-900">{employee.name}</div>
+                    <div className="text-sm text-gray-500">{employee.title} • {employee.department}</div>
+                    <div className="text-xs text-gray-400">{employee.location} • {employee.email}</div>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 justify-center">
+                    <button
+                      className="w-9 h-9 inline-flex items-center justify-center rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200"
+                      onClick={() => openEdit(employee)}
+                      aria-label={`Edit ${employee.name}`}
+                      title="Edit"
+                    >
+                      <FontAwesomeIcon icon={faPen} />
+                    </button>
+                    <button
+                      className="w-9 h-9 inline-flex items-center justify-center rounded-md bg-red-100 text-red-700 hover:bg-red-200"
+                      onClick={() => {
+                        if (confirm(`Delete ${employee.name}? This cannot be undone.`)) {
+                          deleteMutation.mutate(employee.id);
+                        }
+                      }}
+                      aria-label={`Delete ${employee.name}`}
+                      title="Delete"
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         ) : null}
         {isFormOpen ? (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
@@ -291,28 +340,101 @@ const Dashboard: React.FC = () => {
           </div>
         ) : null}
         {!isLoading && !isError && data ? (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+          <motion.div 
+            className="mt-6 flex items-center justify-between"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <motion.div 
+              className="text-sm text-gray-600"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
               Showing {(data?.items?.length ?? 0)} of {data?.total} employees
-            </div>
-            <div className="space-x-2">
-              <button
-                className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+            </motion.div>
+            <div className="flex items-center space-x-3">
+              <motion.button
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border border-gray-200 font-medium transition-all duration-200"
                 disabled={pagination.page <= 1}
-                onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                onClick={() => {
+                  setPaginationDirection('previous');
+                  setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }));
+                }}
+                whileHover={pagination.page > 1 ? { 
+                  scale: 1.05, 
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                  background: "linear-gradient(to right, #f9fafb, #f3f4f6)"
+                } : {}}
+                whileTap={pagination.page > 1 ? { 
+                  scale: 0.98,
+                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)"
+                } : {}}
+                animate={{
+                  opacity: pagination.page <= 1 ? 0.4 : 1,
+                  cursor: pagination.page <= 1 ? "not-allowed" : "pointer"
+                }}
+                transition={{ 
+                  duration: 0.2, 
+                  ease: "easeInOut" 
+                }}
               >
-                Previous
-              </button>
-              <span className="text-sm text-gray-700">Page {data?.page} / {data?.pages}</span>
-              <button
-                className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                <motion.span
+                  initial={false}
+                  animate={{ x: pagination.page <= 1 ? 0 : -2 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  ← Previous
+                </motion.span>
+              </motion.button>
+              
+              <motion.span 
+                className="text-sm text-gray-700 font-medium px-3 py-2 bg-white rounded-lg border border-gray-200 shadow-sm"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.4 }}
+                key={`${data?.page}-${data?.pages}`}
+                whileHover={{ scale: 1.02 }}
+              >
+                Page {data?.page} of {data?.pages}
+              </motion.span>
+              
+              <motion.button
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200 font-medium transition-all duration-200"
                 disabled={pagination.page >= (data?.pages || 1)}
-                onClick={() => setPagination((prev) => ({ ...prev, page: Math.min((data?.pages || prev.page + 1), prev.page + 1) }))}
+                onClick={() => {
+                  setPaginationDirection('next');
+                  setPagination((prev) => ({ ...prev, page: Math.min((data?.pages || prev.page + 1), prev.page + 1) }));
+                }}
+                whileHover={pagination.page < (data?.pages || 1) ? { 
+                  scale: 1.05, 
+                  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.15)",
+                  background: "linear-gradient(to right, #dbeafe, #bfdbfe)"
+                } : {}}
+                whileTap={pagination.page < (data?.pages || 1) ? { 
+                  scale: 0.98,
+                  boxShadow: "0 2px 6px rgba(59, 130, 246, 0.1)"
+                } : {}}
+                animate={{
+                  opacity: pagination.page >= (data?.pages || 1) ? 0.4 : 1,
+                  cursor: pagination.page >= (data?.pages || 1) ? "not-allowed" : "pointer"
+                }}
+                transition={{ 
+                  duration: 0.2, 
+                  ease: "easeInOut" 
+                }}
               >
-                Next
-              </button>
+                <motion.span
+                  initial={false}
+                  animate={{ x: pagination.page >= (data?.pages || 1) ? 0 : 2 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  Next →
+                </motion.span>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         ) : null}
       </div>
     </section>

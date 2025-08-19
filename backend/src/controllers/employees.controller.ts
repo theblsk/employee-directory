@@ -1,5 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import * as service from "../services/employees.service";
+import {
+  validateCreateEmployee,
+  validateUpdateEmployee,
+} from "../validator/employees.validator";
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
@@ -28,16 +32,8 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    // Preferrably we would have used Zod or similar here to validate the create body and then autoinsert
-    const created = await service.create({
-      uuid: String(req.body.uuid),
-      name: String(req.body.name),
-      title: String(req.body.title),
-      email: String(req.body.email),
-      location: String(req.body.location),
-      avatar: req.body.avatar ?? null,
-      departmentId: Number(req.body.departmentId),
-    });
+    const payload = validateCreateEmployee(req.body);
+    const created = await service.create(payload);
     res.status(201).json(created);
   } catch (error) {
     next(error);
@@ -47,14 +43,8 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
-    const updated = await service.update(id, {
-      name: req.body.name,
-      title: req.body.title,
-      email: req.body.email,
-      location: req.body.location,
-      avatar: req.body.avatar,
-      departmentId: req.body.departmentId,
-    });
+    const payload = validateUpdateEmployee(req.body);
+    const updated = await service.update(id, payload);
     if (!updated) return res.status(404).json({ message: "Employee not found" });
     res.json(updated);
   } catch (error) {

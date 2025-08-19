@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "../lib/logger";
+import { ZodError } from "zod";
 
 export function errorHandler(
   err: unknown,
@@ -11,7 +12,16 @@ export function errorHandler(
   let message = "Internal Server Error";
   let stack: string | undefined;
 
-  if (err instanceof Error) {
+  if (err instanceof ZodError) {
+    status = 400;
+    const issues = err.issues.map((i) => ({
+      path: i.path.join("."),
+      message: i.message,
+      code: i.code,
+    }));
+    logger.warn("Validation failed", { issues });
+    return res.status(status).json({ message: "Validation error", issues });
+  } else if (err instanceof Error) {
     message = err.message ?? message;
     stack = err.stack;
     if ("status" in err) {

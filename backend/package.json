@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "bun run --hot index.ts",
     "start": "bun run index.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "db:seed": "bun run src/scripts/migrateAndSeed.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
